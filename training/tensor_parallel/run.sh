@@ -1,9 +1,9 @@
-weight_path=/host/ssd/hf_models/llama2-7b-hf
+weight_path=/home/wenke/.cache/huggingface/hub/models--meta-llama--Llama-2-7b-hf/snapshots/01c7f73d771dfac7d292323805ebc428287df4f9
 # weight_path=/host/ssd/hf_models/Meta-Llama-3.1-8B
 export WANDB_MODE=disabled
-num_gpus=8
-epoch=3
-mbs=2
+num_gpus=4
+epoch=1
+mbs=1
 MODE=${1:-zero1tp} 
 if [ "$MODE" == "zero1tp" ]; then
   ZERO_STAGE=1
@@ -27,7 +27,7 @@ elif [ "$MODE" == "zero3" ]; then
   per_device_train_batch_size=$mbs
 elif [ "$MODE" == "tp" ]; then
   ZERO_STAGE=0
-  AUTOTP_SIZE=8
+  AUTOTP_SIZE=4
   per_device_train_batch_size=$((mbs * AUTOTP_SIZE))
 else
   echo "error '$MODE',please use 'zero' or 'tp'。"
@@ -42,6 +42,7 @@ sed -e "s/\${zero_stage}/${ZERO_STAGE}/g" \
 
 deepspeed --num_gpus $num_gpus  \
     --master_port 51336  train.py  \
+    --deepspeed ds_config.json \
     --model_name_or_path  $weight_path \
     --data_path ./alpaca_data.json \
     --bf16 True \
@@ -60,5 +61,6 @@ deepspeed --num_gpus $num_gpus  \
     --warmup_ratio 0.03 \
     --lr_scheduler_type cosine \
     --logging_steps 1 \
-    --tf32 True \
-    --deepspeed "./configs/ds_config.json"
+    --tf32 false \
+    --ddp_backend ccl
+    
