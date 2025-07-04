@@ -57,7 +57,7 @@ def get_args():
                         help='pipeline parallelism')
     parser.add_argument('--backend',
                         type=str,
-                        default='nccl',
+                        default='xccl',
                         help='distributed backend')
     parser.add_argument('--seed', type=int, default=1138, help='PRNG seed')
     parser = deepspeed.add_config_arguments(parser)
@@ -151,7 +151,9 @@ if __name__ == '__main__':
 
     deepspeed.init_distributed(dist_backend=args.backend)
     args.local_rank = int(os.environ['LOCAL_RANK'])
-    torch.cuda.set_device(args.local_rank)
+    print(f"----------------Local rank: {args.local_rank}")
+    torch.xpu.set_device(args.local_rank)
+    
 
     if args.pipeline_parallel_size == 0:
         train_base(args)

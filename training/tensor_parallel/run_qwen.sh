@@ -1,18 +1,19 @@
-weight_path=/models/TinyLlama-1.1B-Chat-v1.0
-# weight_path=/models/Llama-2-7b-hf
-# weight_path=/models/Qwen2-0.5B-Instruct
+#weight_path="/models/Meta-Llama-2-7b-hf/"
+#weight_path="/models/Llama-2-7b-hf/"
+weight_path="/models/Qwen2-0.5B-Instruct/"
+# weight_path=/host/ssd/hf_models/Meta-Llama-3.1-8B
 export WANDB_MODE=disabled
 num_gpus=4
-epoch=1
-mbs=1
-MODE=${1:-zero1tp} 
+epoch=3
+mbs=2
+MODE=${1:-zero2tp} 
 if [ "$MODE" == "zero1tp" ]; then
   ZERO_STAGE=1
-  AUTOTP_SIZE=4
+  AUTOTP_SIZE=2
   per_device_train_batch_size=$((mbs * AUTOTP_SIZE))
 elif [ "$MODE" == "zero2tp" ]; then
   ZERO_STAGE=2
-  AUTOTP_SIZE=4
+  AUTOTP_SIZE=2
   per_device_train_batch_size=$((mbs * AUTOTP_SIZE))
 elif [ "$MODE" == "zero1" ]; then
   ZERO_STAGE=1
@@ -45,7 +46,6 @@ deepspeed --num_gpus $num_gpus  \
     --master_port 51336  train.py  \
     --model_name_or_path  $weight_path \
     --data_path ./alpaca_data.json \
-    --bf16 True \
     --output_dir out_load_test/$MODE \
     --num_train_epochs $epoch \
     --gradient_checkpointing false \
@@ -60,5 +60,7 @@ deepspeed --num_gpus $num_gpus  \
     --warmup_ratio 0.03 \
     --lr_scheduler_type cosine \
     --logging_steps 1 \
-    --tf32 false \
-    --deepspeed "./configs/ds_config.json"
+    --tf32 False 
+    #--bf16 True \
+    #--tf32 True \
+    #--deepspeed "./configs/ds_config.json"
